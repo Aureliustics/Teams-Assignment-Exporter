@@ -20,7 +20,7 @@ def find_location():
 
     os.makedirs(os.path.join(parent_dir, "Teams Export"), exist_ok=True)
 
-find_location()find_location()
+find_location()
 
 def sanitize_name(name):
     if not name or not isinstance(name, str):
