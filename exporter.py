@@ -20,4 +20,29 @@ def find_location():
 
     os.makedirs(os.path.join(parent_dir, "Teams Export"), exist_ok=True)
 
-find_location()
+find_location()find_location()
+
+def sanitize_name(name):
+    if not name or not isinstance(name, str):
+        print(f"{ERROR} Param not in valid format or empty, defaulting to \"Untitled\"")
+        return "Untitled"
+    
+    name = name.rstrip()
+    not_allowed = ['<', '>', ':', '\"', '\\', '/', '|', '?', '*']
+    sanitized_name = ""
+    for char in name:
+        if char not in not_allowed:
+            sanitized_name += char
+
+    return sanitized_name[:150]
+
+def fetch_token():
+    global TOKEN
+    if TOKEN:
+        return TOKEN
+    else:
+        print("Paste your token here. To get your token, see tokenExport.js in the repository.")
+        TOKEN = str(input(">>> "))
+        return TOKEN    
+
+    
