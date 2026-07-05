@@ -82,7 +82,7 @@ def GET_request(url, params=None, stream=False, attempts=3):
         headers = {"Authorization": f"Bearer {fetch_token()}"}
         resp = requests.get(url, headers=headers, params=params, stream=stream)
         if resp.status_code == 401:
-            print(f"{ERROR}[!] Invalid or expired token, please fetch a new one.")
+            print(f"{ERROR}[-] Invalid or expired token, please fetch a new one.")
             TOKEN = None
             continue
         return resp
@@ -123,7 +123,60 @@ def get_icon(id, folder):
         for chunk in resp.iter_content(chunk_size=8192):
             file.write(chunk)
     print(f"{SUCCESS}[+] Class icon downloaded")
+
+
+def get_submission(class_id, assignment_id):
+    submissions = handle_pagination(f"{API_ENDPOINT}/education/classes/{class_id}/assignments/{assignment_id}/submissions")
+    if submissions:
+        return submissions[0]
+    else:
+        return None
+
+def get_score(class_id, assignment_id, submission_id):
+    resp = GET_request(f"{API_ENDPOINT}/education/classes/{class_id}/assignments/{assignment_id}/submissions/{submission_id}/outcomes")
+    if resp.status_code != 200:
+        print(F"{ERROR}[-] Failed to get assignment score. Error code: {resp.status_code}")
+
+    return resp.json().get("value", [])
     
+
+def write_metadata(path, class_name, assignment, submission, scores):
+    points = "?"
+    max_points = "?"
+    feedback = "None"
+    instructions = "None"
+    if submission:
+        status = submission.get("status", "unknown")
+    else:
+        status = "unknown"
+
+    grading = assignment.get("grading")
+    if isinstance(grading, dict):
+        max_points = grading.get("maxPoints", "?")
+
+    for score in scores:
+        if "PointsOutcome" in score.get("@odata.type", ""):
+            published = score.get("publishedPoints")
+            drafted = score.get("points")
+            if published and published.get("publishedPoints") is not None:
+                points = published
+            elif drafted and drafted.get("points") is not None:
+                points = drafted["points"]
+        elif "FeedbackOutcome" in score.get("@odata.type", ""):
+            feedback = score.get("publishedFeedback")
+            if isinstance(feedback, dict):#prevent errors upon no feedback
+                feedback_text = feedback.get("text")
+                if isinstance(feedback_text, dict) and feedback_text.get("content"):#checks to make it resistent to variations in data structure
+                    feedback = feedback_text["content"]
+                elif isinstance(feedback_text, str) and feedback_text:
+                    feedback = feedback_text
+    if assignment.get("instructions"):
+        instructions = assignment["instructions"].get("content", "None")
+
+    data = [f"Assignment: {assignment.get('displayName', 'Untitled')}\nStatus: {status}\nPoints: {points}/{max_points}\nDue Date: {assignment.get('dueDateTime', 'Unknown')}\nAssigned: {assignment.get('assignedDateTime', 'Unknown')}\nClass name: {class_name}\nInstructions: {instructions}\nFeedback: {feedback}"]
+    with open(path, "w", encoding="utf-8") as file:
+        file.write("\n".join(data))
+    #print(f"{SUCCESS}     -> Wrote assignment metadata")
 
 def main():
     global SAVE_DIR
@@ -150,13 +203,28 @@ def main():
         except Exception as err:
             print(f"{ERROR}[-] Folder could not be created: {err}")
             failed += 1
-        #todo make it download the teams icon to this path aswell
-
-        assignments = get_assignments(class_id)
-
-        print(f"{INFO}[*] Found {len(assignments)} assignments")
 
         get_icon(class_id, class_folder)
+
+        assignments = get_assignments(class_id)
+        print(f"{INFO}[*] Found {len(assignments)} assignment{'s' if len(assignments) > 1 else ''}")
+
+        for assignment in assignments:
+            assignment_name = sanitize_name(assignment.get("displayName", "Untitled Assignment"))
+            assignment_folder = os.path.join(class_folder, assignment_name)
+            try:
+                os.makedirs(assignment_folder, exist_ok=True)
+                print(f"{SUCCESS}  -> Created assignment subfolder: {assignment_name}")
+            except Exception as err:
+                print(f"{ERROR}[-] Subfolder {assignment_name} could not be created")
+
+            submission = get_submission(class_id, assignment["id"])
+            score = []
+            if submission:
+                score = get_score(class_id, assignment["id"], submission["id"])
+
+            write_metadata(os.path.join(assignment_folder, "metadata.txt"), class_name, assignment, submission, score)
+
         time.sleep(0.2)#avoid ratelimit
 
 
