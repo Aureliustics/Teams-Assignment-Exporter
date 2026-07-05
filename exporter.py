@@ -3,7 +3,10 @@ import sys
 import colorama
 import tkinter as tk
 import requests
+import json
 from tkinter import filedialog
+
+#note to self add docstrings (summary, params, return and the datatypes) so it isnt a pain for anyone contributing in the future
 
 SAVE_DIR = None
 API_ENDPOINT = "https://graph.microsoft.com/v1.0"
@@ -13,6 +16,7 @@ colorama.init(autoreset=True)
 WARNING = "\033[38;2;255;165;0m"
 ERROR = "\033[31m"
 SUCCESS = "\033[92m"
+INFO = "\033[36m"
 
 def find_location():
     print(f"[*] Choose a directory to export your data")
@@ -44,7 +48,7 @@ def fetch_token():
     if TOKEN:
         return TOKEN
     else:
-        print("[*] Paste your token here. To get your token, see tokenExport.js in the repository.")
+        print(f"{INFO}[*] Paste your token here. To get your token, see tokenExport.js in the repository.")
         TOKEN = str(input(">>> "))
         sys.stdout.write("\033[2J\033[H")
         sys.stdout.flush()# clear the line after recieving token
@@ -53,6 +57,20 @@ def fetch_token():
 
 def fetch_channels():
     pass
+
+def get_channels():
+    channels = []
+    print(f"{INFO}[*] Fetching teams channels...")
+    teams = handle_pagination(f"{API_ENDPOINT}/me/joinedTeams")
+    #print(teams)
+    for team in teams:# only grab display name of channel and its id
+        item = {
+            "id": team["id"],
+            "displayName": team.get("displayName", "Unnamed Team")
+        }
+        channels.append(item)
+    return channels
+
 
 def GET_request(url, params=None, stream=False, attempts=3):
     global TOKEN
@@ -66,11 +84,31 @@ def GET_request(url, params=None, stream=False, attempts=3):
         return resp
     raise RuntimeError(f"{ERROR}[-] Failed to GET {url} after {attempts} tries.")
 
+def handle_pagination(url, params=None):
+    '''
+    because graph cant return full responses if too big. collect the chunks/pages via @odata.nextLink
+    '''
+    results = []
+    next_url = url
+    next_params = params
+    while next_url:
+        resp = GET_request(next_url, params=next_params)
+        if resp.status_code != 200:# if not success break out loop
+            break
+
+        data = resp.json()
+        results.extend(data.get("value", []))
+        next_url = data.get("@odata.nextLink")
+        next_params = None
+
+    return results
+
 def main():
     global SAVE_DIR
     SAVE_DIR = find_location()
     print(f"{SUCCESS}[+] Exporting data to: {SAVE_DIR}")
 
 resp = GET_request("https://graph.microsoft.com/v1.0/me")
-print(f"[DEBUG]: Data retrieve attempt: {resp.status_code, resp.json()}")
+print("[DEBUG]: Data retrieve attempt: {resp.status_code, resp.json()}")
+print(get_channels())
     
