@@ -72,7 +72,7 @@ def get_classes():
     return classes
 
 def get_assignments(class_id):
-    print(f"{INFO}[*] Fetching assignments...")
+    #print(f"{INFO}[*] Fetching assignments...")
     return handle_pagination(f"{API_ENDPOINT}/education/classes/{class_id}/assignments")
 
 
@@ -108,6 +108,23 @@ def handle_pagination(url, params=None):
 
     return results
 
+def get_icon(id, folder):
+    resp = GET_request(f"{API_ENDPOINT}/groups/{id}/photo/$value", stream=True)
+    if resp.status_code != 200:
+        print(f"{ERROR}[-] Error retrieving teams icon. Error code: {resp.status_code}")
+        return
+    
+    content_type = resp.headers.get("Content-Type", "image/jpeg")
+    if "png" in content_type:
+        extension = "png"
+    else:
+        extension = "jpg"
+    with open(os.path.join(folder, f"icon.{extension}"), "wb") as file:
+        for chunk in resp.iter_content(chunk_size=8192):
+            file.write(chunk)
+    print(f"{SUCCESS}[+] Class icon downloaded")
+    
+
 def main():
     global SAVE_DIR
     SAVE_DIR = f"{find_location()}/Teams Export"
@@ -122,20 +139,28 @@ def main():
     for cls in classes:
         class_name = cls.get("displayName", "Untitled Team")#later use the sanitize function when creating folder name
         class_id = cls.get("id", "null")
+        print(f"\nScraping data from -> {class_name}")
         #print(class_name)
         #print(class_id)
         try:
-            print(f"{SUCCESS}[+] Writing folder: {sanitize_name(class_name)}")
             class_folder = os.path.join(SAVE_DIR, sanitize_name(class_name))
             os.makedirs(class_folder, exist_ok=True)
+            print(f"{SUCCESS}[+] Folder successfully created")
             succeed += 1
         except Exception as err:
-            print(f"{ERROR}[-] {sanitize_name(class_name)} could not be created: {err}")
+            print(f"{ERROR}[-] Folder could not be created: {err}")
             failed += 1
         #todo make it download the teams icon to this path aswell
+
+        assignments = get_assignments(class_id)
+
+        print(f"{INFO}[*] Found {len(assignments)} assignments")
+
+        get_icon(class_id, class_folder)
         time.sleep(0.2)#avoid ratelimit
 
-    print(f"{INFO}[*] Success rate: {(succeed / (succeed + failed) * 100)}% | {succeed} succeeded {failed} failed")
+
+    print(f"\n{INFO}[*] Success rate: {(succeed / (succeed + failed) * 100)}% | {succeed} succeeded {failed} failed")
 
 resp = GET_request("https://graph.microsoft.com/v1.0/me")
 print(f"[DEBUG]: Data retrieve attempt: {resp.status_code, resp.json()}")
