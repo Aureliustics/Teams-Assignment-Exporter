@@ -4,6 +4,7 @@ import colorama
 import tkinter as tk
 import requests
 import json
+import time
 from tkinter import filedialog
 
 #note to self add docstrings (summary, params, return and the datatypes) so it isnt a pain for anyone contributing in the future
@@ -19,15 +20,14 @@ SUCCESS = "\033[92m"
 INFO = "\033[36m"
 
 def find_location():
-    print(f"[*] Choose a directory to export your data")
+    print(f"{INFO}[*] Choose a directory to export your data")
     parent_dir = filedialog.askdirectory(title="Choose Where to Save Export Data")
     if not parent_dir:
         print(f"{WARNING}[!] No folder selected so defaulting to Documents")
         os.path.join(os.path.expanduser("~"), "Documents", "Exports")
 
     os.makedirs(os.path.join(parent_dir, "Teams Export"), exist_ok=True)
-
-find_location()
+    return parent_dir
 
 def sanitize_name(name):
     if not name or not isinstance(name, str):
@@ -58,18 +58,22 @@ def fetch_token():
 def fetch_channels():
     pass
 
-def get_channels():
-    channels = []
-    print(f"{INFO}[*] Fetching teams channels...")
+def get_classes():
+    classes = []
+    print(f"{INFO}[*] Fetching classes...")
     teams = handle_pagination(f"{API_ENDPOINT}/me/joinedTeams")
     #print(teams)
-    for team in teams:# only grab display name of channel and its id
+    for team in teams:# only grab display name of classes and its id
         item = {
             "id": team["id"],
             "displayName": team.get("displayName", "Unnamed Team")
         }
-        channels.append(item)
-    return channels
+        classes.append(item)
+    return classes
+
+def get_assignments(class_id):
+    print(f"{INFO}[*] Fetching assignments...")
+    return handle_pagination(f"{API_ENDPOINT}/education/classes/{class_id}/assignments")
 
 
 def GET_request(url, params=None, stream=False, attempts=3):
@@ -94,6 +98,7 @@ def handle_pagination(url, params=None):
     while next_url:
         resp = GET_request(next_url, params=next_params)
         if resp.status_code != 200:# if not success break out loop
+            print(f"{ERROR}[-] Error retrieving page, error code: {resp.status_code}")
             break
 
         data = resp.json()
@@ -105,10 +110,35 @@ def handle_pagination(url, params=None):
 
 def main():
     global SAVE_DIR
-    SAVE_DIR = find_location()
-    print(f"{SUCCESS}[+] Exporting data to: {SAVE_DIR}")
+    SAVE_DIR = f"{find_location()}/Teams Export"
+    if SAVE_DIR != None:
+        print(f"{SUCCESS}[+] Exporting data to: {SAVE_DIR}")
+    else:
+        print(f"{ERROR}[-] Save directory not found!")
+    classes = get_classes()
+
+    failed = 0
+    succeed = 0
+    for cls in classes:
+        class_name = cls.get("displayName", "Untitled Team")#later use the sanitize function when creating folder name
+        class_id = cls.get("id", "null")
+        #print(class_name)
+        #print(class_id)
+        try:
+            print(f"{SUCCESS}[+] Writing folder: {sanitize_name(class_name)}")
+            class_folder = os.path.join(SAVE_DIR, sanitize_name(class_name))
+            os.makedirs(class_folder, exist_ok=True)
+            succeed += 1
+        except Exception as err:
+            print(f"{ERROR}[-] {sanitize_name(class_name)} could not be created: {err}")
+            failed += 1
+        #todo make it download the teams icon to this path aswell
+        time.sleep(0.2)#avoid ratelimit
+
+    print(f"{INFO}[*] Success rate: {(succeed / (succeed + failed) * 100)}% | {succeed} succeeded {failed} failed")
 
 resp = GET_request("https://graph.microsoft.com/v1.0/me")
-print("[DEBUG]: Data retrieve attempt: {resp.status_code, resp.json()}")
-print(get_channels())
+print(f"[DEBUG]: Data retrieve attempt: {resp.status_code, resp.json()}")
+print(get_classes())
+main()
     
