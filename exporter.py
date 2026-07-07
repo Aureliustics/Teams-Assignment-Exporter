@@ -294,70 +294,75 @@ def main():
     failed = 0
     succeed = 0
     for index, cls in enumerate(classes):
-        class_name = cls.get("displayName", "Untitled Team")#later use the sanitize function when creating folder name
-        class_id = cls.get("id", "null")
-        print(f"\nScraping data ({index+1}/{len(classes)}) from -> {class_name}")
         try:
-            class_folder = os.path.join(SAVE_DIR, sanitize_name(class_name))
-            os.makedirs(class_folder, exist_ok=True)
-            print(f"{SUCCESS}[+] Folder successfully created")
-            succeed += 1
-        except Exception as err:
-            print(f"{ERROR}[-] Folder could not be created: {err}")
-            failed += 1
-            continue
-
-        get_icon(class_id, class_folder)
-
-        assignments = get_assignments(class_id)
-        print(f"{INFO}[*] Found {len(assignments)} assignment{'s' if len(assignments) > 1 else ''}")
-
-        for assignment in assignments:
-            assignment_name = sanitize_name(assignment.get("displayName", "Untitled Assignment"))
-            assignment_folder = os.path.join(class_folder, assignment_name)
-            reference_material_folder = os.path.join(assignment_folder, "reference_material")
-            os.makedirs(reference_material_folder, exist_ok=True)
-
+            class_name = cls.get("displayName", "Untitled Team")
+            class_id = cls.get("id", "null")
+            print(f"\nScraping data ({index+1}/{len(classes)}) from -> {class_name}")
             try:
-                os.makedirs(assignment_folder, exist_ok=True)
-                print(f"{SUCCESS}  -> Created assignment subfolder: {assignment_name}")
+                class_folder = os.path.join(SAVE_DIR, sanitize_name(class_name))
+                os.makedirs(class_folder, exist_ok=True)
+                print(f"{SUCCESS}[+] Folder successfully created")
+                succeed += 1
             except Exception as err:
-                print(f"{ERROR}[-] Subfolder {assignment_name} could not be created")
+                print(f"{ERROR}[-] Folder could not be created: {err}")
+                failed += 1
+                continue
 
-            submission = get_submission(class_id, assignment["id"])
-            drive_id = get_drive_id(assignment.get("resourcesFolderUrl"))
-            score = []
-            if submission:
-                score = get_score(class_id, assignment["id"], submission["id"])
-                submitted_files = get_submission_files(class_id, assignment["id"], submission["id"])
-                if submitted_files:# fetching the resources that student submitted
-                    submission_folder = os.path.join(assignment_folder, "my_work")
-                    os.makedirs(submission_folder, exist_ok=True)
-                    submission_folder = os.path.join(assignment_folder, "my_work")
-                    os.makedirs(submission_folder, exist_ok=True)
-                    for resource in submitted_files:
-                        resource_handler(resource, submission_folder, drive_id, class_name, assignment_name, assignment.get("webUrl", ""))
+            get_icon(class_id, class_folder)
 
-            for material in get_reference_material(class_id, assignment["id"]):#getting teacher provided resources
-                resource_handler(material, reference_material_folder, drive_id, class_name, assignment_name, assignment.get("webUrl", ""))
+            assignments = get_assignments(class_id)
+            print(f"{INFO}[*] Found {len(assignments)} assignment{'s' if len(assignments) > 1 else ''}")
 
-            write_metadata(os.path.join(assignment_folder, "metadata.txt"), class_name, assignment, submission, score)
+            for assignment in assignments:
+                assignment_name = sanitize_name(assignment.get("displayName", "Untitled Assignment"))
+                assignment_folder = os.path.join(class_folder, assignment_name)
+                reference_material_folder = os.path.join(assignment_folder, "reference_material")
+                os.makedirs(reference_material_folder, exist_ok=True)
 
-        time.sleep(0.2)#avoid ratelimit
+                try:
+                    os.makedirs(assignment_folder, exist_ok=True)
+                    print(f"{SUCCESS}  -> Created assignment subfolder: {assignment_name}")
+                except Exception as err:
+                    print(f"{ERROR}[-] Subfolder {assignment_name} could not be created")
 
-    if FAIL_LOG:
-        log_path = os.path.join(SAVE_DIR, "REQUIRES_MANUAL_DOWNLOAD")
-        with open(log_path, "w", encoding="utf-8") as file:
-            file.write(f"{len(FAIL_LOG)} files failed to download likely due to blocked permissions or rate limit. Manually download the files below in order to presereve them.\n")
-            file.write("#" * 67 + "\n\n")
-            for team, assignment, filename, url in FAIL_LOG:
-                file.write(f"Team:  {team}\nAssignment:  {assignment}\nFile:  {filename}\nLink:  {url or 'Not Found'}")
+                submission = get_submission(class_id, assignment["id"])
+                drive_id = get_drive_id(assignment.get("resourcesFolderUrl"))
+                score = []
+                if submission:
+                    score = get_score(class_id, assignment["id"], submission["id"])
+                    submitted_files = get_submission_files(class_id, assignment["id"], submission["id"])
+                    if submitted_files:# fetching the resources that student submitted
+                        submission_folder = os.path.join(assignment_folder, "my_work")
+                        os.makedirs(submission_folder, exist_ok=True)
+                        submission_folder = os.path.join(assignment_folder, "my_work")
+                        os.makedirs(submission_folder, exist_ok=True)
+                        for resource in submitted_files:
+                            resource_handler(resource, submission_folder, drive_id, class_name, assignment_name, assignment.get("webUrl", ""))
 
-            print(f"{WARNING}[!] Detected {len(FAIL_LOG)} files that require manual downloading. Check {log_path}")
-    try:
-        print(f"\n{INFO}[*] Success rate: {(succeed / (succeed + failed) * 100)}% | {succeed} succeeded {failed} failed")
-    except ZeroDivisionError:
-        print(f"\n{WARNING}[*] Could not calculate success rate because no teams were found")
+                for material in get_reference_material(class_id, assignment["id"]):#getting teacher provided resources
+                    resource_handler(material, reference_material_folder, drive_id, class_name, assignment_name, assignment.get("webUrl", ""))
+
+                write_metadata(os.path.join(assignment_folder, "metadata.txt"), class_name, assignment, submission, score)
+
+            time.sleep(0.2)#avoid ratelimit
+
+            if FAIL_LOG:
+                log_path = os.path.join(SAVE_DIR, "REQUIRES_MANUAL_DOWNLOAD.txt")
+                with open(log_path, "w", encoding="utf-8") as file:
+                    file.write(f"{len(FAIL_LOG)} files failed to download likely due to blocked permissions or rate limit. Manually download the files below in order to presereve them.\n")
+                    file.write("#" * 67 + "\n\n")
+                    for team, assignment, filename, url in FAIL_LOG:
+                        file.write(f"Team:  {team}\nAssignment:  {assignment}\nFile:  {filename}\nLink:  {url or 'Not Found'}\n\n")
+
+                    print(f"\n{WARNING}[!] Detected {len(FAIL_LOG)} files that require manual downloading. Check {log_path}")
+            try:
+                print(f"\n{INFO}[*] Success rate: {(succeed / (succeed + failed) * 100)}% | {succeed} succeeded {failed} failed")
+            except ZeroDivisionError as err:
+                print(f"\n{WARNING}[*] Could not calculate success rate because no teams were found: {err}")
+        except RuntimeError as err:
+            print(f"{ERROR}[-] Skipping {class_name} due to failure with authentication (Maybe reget cookie). Error: {err}")
+            failed += 1
+
 
 main()
     
