@@ -24,7 +24,7 @@ def find_location():
     parent_dir = filedialog.askdirectory(title="Choose Where to Save Export Data")
     if not parent_dir:
         print(f"{WARNING}[!] No folder selected so defaulting to Documents")
-        os.path.join(os.path.expanduser("~"), "Documents", "Exports")
+        parent_dir = os.path.join(os.path.expanduser("~"), "Documents", "Exports")
 
     os.makedirs(os.path.join(parent_dir, "Teams Export"), exist_ok=True)
     return parent_dir
@@ -41,7 +41,7 @@ def sanitize_name(name):
         if char not in not_allowed:
             sanitized_name += char
 
-    return sanitized_name[:150]
+    return sanitized_name[:150].rstrip('. ')
 
 def fetch_token():
     global TOKEN
@@ -281,11 +281,10 @@ def write_metadata(path, class_name, assignment, submission, scores):
     data = [f"Assignment: {assignment.get('displayName', 'Untitled')}\nStatus: {status}\nPoints: {points}/{max_points}\nDue Date: {assignment.get('dueDateTime', 'Unknown')}\nAssigned: {assignment.get('assignedDateTime', 'Unknown')}\nClass name: {class_name}\nInstructions: {instructions}\nFeedback: {feedback}"]
     with open(path, "w", encoding="utf-8") as file:
         file.write("\n".join(data))
-    #print(f"{SUCCESS}     -> Wrote assignment metadata")
 
 def main():
     global SAVE_DIR
-    SAVE_DIR = f"{find_location()}/Teams Export"
+    SAVE_DIR = os.path.join(find_location(), "Teams Export")
     if SAVE_DIR != None:
         print(f"{SUCCESS}[+] Exporting data to: {SAVE_DIR}")
     else:
@@ -294,12 +293,10 @@ def main():
 
     failed = 0
     succeed = 0
-    for cls in classes:
+    for index, cls in enumerate(classes):
         class_name = cls.get("displayName", "Untitled Team")#later use the sanitize function when creating folder name
         class_id = cls.get("id", "null")
-        print(f"\nScraping data from -> {class_name}")
-        #print(class_name)
-        #print(class_id)
+        print(f"\nScraping data ({index+1}/{len(classes)}) from -> {class_name}")
         try:
             class_folder = os.path.join(SAVE_DIR, sanitize_name(class_name))
             os.makedirs(class_folder, exist_ok=True)
@@ -336,7 +333,6 @@ def main():
                 if submitted_files:# fetching the resources that student submitted
                     submission_folder = os.path.join(assignment_folder, "my_work")
                     os.makedirs(submission_folder, exist_ok=True)
-                    #print(f"Submitted files: {submitted_files}")
                     submission_folder = os.path.join(assignment_folder, "my_work")
                     os.makedirs(submission_folder, exist_ok=True)
                     for resource in submitted_files:
@@ -361,7 +357,7 @@ def main():
     try:
         print(f"\n{INFO}[*] Success rate: {(succeed / (succeed + failed) * 100)}% | {succeed} succeeded {failed} failed")
     except ZeroDivisionError:
-        print(f"[*] Cannot calculate success rate because no teams were found")
+        print(f"\n{WARNING}[*] Could not calculate success rate because no teams were found")
 
 main()
     
