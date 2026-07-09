@@ -14,7 +14,7 @@
   <li>1. Download the repository (Code > Local > Download ZIP) then extract the ZIP file</li>
   <li>2. Open command prompt (Windows + R, type cmd then press enter)</li>
   <li>3. Navigate to the folder that you got from extracting. <code>cd [PATH TO THE FOLDER HERE]</code></li>
-  <li>4. run <code>python exporter.py</code> then follow the prompts in the program</li>
+  <li>4. Run <code>python exporter.py</code> then follow the prompts in the program</li>
 </ul>
 
 <h1>Getting and Using Token</h1>
