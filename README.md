@@ -6,7 +6,7 @@
 <ul>
   <li>Python 3.12+</li>
   <li><code>pip install requests colorama</code></li>
-  <li><code>tkinter</code> (included with Python on Windows/Mac; on Linux you may need `sudo apt install python3-tk`)</li>
+  <li><code>tkinter</code> (on Linux you may need <code>sudo apt install python3-tk</code>)</li>
 </ul>
 
 <h1>Installation and Usage</h1>
