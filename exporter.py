@@ -50,9 +50,11 @@ def fetch_token():
     else:
         print(f"{INFO}[*] Paste your token here. To get your token, see tokenExport.js in the repository.")
         TOKEN = str(input(">>> "))
+        if "Bearer " in TOKEN:
+            TOKEN = TOKEN.replace("Bearer ", "")
         sys.stdout.write("\033[2J\033[H")
-        sys.stdout.flush()# clear the line after recieving token
-        print(f"{SUCCESS}[+] Token recieved! Preceding.")
+        sys.stdout.flush()# clear the line after receiving token
+        print(f"{SUCCESS}[+] Token received! Preceding.")
         return TOKEN    
 
 def fetch_channels():
@@ -178,7 +180,7 @@ def resource_handler(resource, path, drive_id=None, class_name="", assignment_na
                 url = None
         log_path = os.path.join(path, f"{sanitize_name(filename)}_LINK.txt")
         with open(log_path, "w", encoding="utf-8") as file:
-            file.write(f"Name of file: {filename}\nType: {type}\nURL: {url or "Unavailable"}\n(No resources found so open URL manually instead)")
+            file.write(f"Name of file: {filename}\nType: {type}\nURL: {url or 'Unavailable'}\n(No resources found so open URL manually instead)")
         print(f"    {SUCCESS}Saved resource link: {filename}")
         return
 
