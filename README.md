@@ -32,7 +32,7 @@
     Method 2: Manually
   </h3>
 <ul>
-  <li>1. Copy the script from <a href="https://github.com/Aureliustics/Teams-Assignment-Exporter/blob/main/exporter.py" target="_blank">here</a> or from your folder</li>
+  <li>1. Copy the script from <a href="https://github.com/Aureliustics/Teams-Assignment-Exporter/blob/main/tokenExport.js" target="_blank">here</a> or from your folder</li>
   <li>2. Open Teams from a web browser and press F12 to open developer tools</li>
   <li>3. Under <code>Network</code> tab, type in <code>graph.microsoft.com</code> in the <code>Filter</code> textbox</li>
   <li>4. Click on any Teams assignment (this will make sure the token is loaded)</li>
