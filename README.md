@@ -50,4 +50,5 @@
   <li>(Coming Soon) HTML viewer which you can use to select the exports folder and view your assignment history through a UI that mimics Teams</li>
 </ul>
 
-> **Disclaimer:** This uses a personal access token that is required for getting Teams data. It only accesses data you already have permission to see. Never share your token and treat it like a password.
+> [!NOTE]
+> This uses a personal access token that is required for getting Teams data. It only accesses data you already have permission to see. Never share your token and treat it like a password.
