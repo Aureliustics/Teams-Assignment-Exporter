@@ -48,6 +48,8 @@
   <li>Neatly organizes files download into their designated paths ie. <code>my_work</code>, <code>reference_material</code></li>
   <li>Any resources that fail to download will have their resource link saved into <code>REQUIRES_MANUAL_DOWNLOAD.txt</code></li>
   <li>(Coming Soon) HTML viewer which you can use to select the exports folder and view your assignment history through a UI that mimics Teams</li>
+  <li>(Coming Soon) Export teams text channels</li>
+  <li>(Coming Soon) UI version of the exporter</li>
 </ul>
 
 > [!NOTE]
