@@ -1,6 +1,6 @@
 <h1>Teams Assignment Exporter</h1>
 <h3>A CLI tool to scrape Teams assignment data via Graph API in bulk. Downloads assignment files, submitted files, score, Teams channel icon, and other miscellaneous metadata. Used for students graduating or if you just want to backup all your work.</h3>
-<h5>If you like this repository, a star would be greatly appreciated, thank you.</h5>
+<h5>🌟 If you like this repository, a star would be greatly appreciated, thank you.</h5>
 
 <h1>Requirements</h1>
 <ul>
