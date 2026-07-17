@@ -13,11 +13,11 @@ SAVE_DIR = None
 API_ENDPOINT = "https://graph.microsoft.com/v1.0"
 TOKEN = None
 FAIL_LOG = []
-colorama.init(autoreset=True)
 WARNING = "\033[38;2;255;165;0m"
 ERROR = "\033[31m"
 SUCCESS = "\033[92m"
 INFO = "\033[36m"
+colorama.init(autoreset=True)
 
 def find_location():
     print(f"{INFO}[*] Choose a directory to export your data")
@@ -56,9 +56,6 @@ def fetch_token():
         sys.stdout.flush()# clear the line after receiving token
         print(f"{SUCCESS}[+] Token received! Preceding.")
         return TOKEN    
-
-def fetch_channels():
-    pass
 
 def get_classes():
     classes = []
@@ -365,6 +362,4 @@ def main():
             print(f"{ERROR}[-] Skipping {class_name} due to failure with authentication (Maybe reget cookie). Error: {err}")
             failed += 1
 
-
 main()
-    

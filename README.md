@@ -5,7 +5,7 @@
 <h1>Requirements</h1>
 <ul>
   <li>Python 3.12+</li>
-  <li><code>pip install requests colorama</code></li>
+  <li>Run Install-Dependencies.bat or <code>pip install requests colorama</code> to do it manually</li>
   <li><code>tkinter</code> (on Linux you may need <code>sudo apt install python3-tk</code>)</li>
 </ul>
 
