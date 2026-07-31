@@ -344,22 +344,22 @@ def main():
                 write_metadata(os.path.join(assignment_folder, "metadata.txt"), class_name, assignment, submission, score)
 
             time.sleep(0.2)#avoid ratelimit
-
-            if FAIL_LOG:
-                log_path = os.path.join(SAVE_DIR, "REQUIRES_MANUAL_DOWNLOAD.txt")
-                with open(log_path, "w", encoding="utf-8") as file:
-                    file.write(f"{len(FAIL_LOG)} files failed to download likely due to blocked permissions or rate limit. Manually download the files below in order to presereve them.\n")
-                    file.write("#" * 67 + "\n\n")
-                    for team, assignment, filename, url in FAIL_LOG:
-                        file.write(f"Team:  {team}\nAssignment:  {assignment}\nFile:  {filename}\nLink:  {url or 'Not Found'}\n\n")
-
-                    print(f"\n{WARNING}[!] Detected {len(FAIL_LOG)} files that require manual downloading. Check {log_path}")
-            try:
-                print(f"\n{INFO}[*] Success rate: {(succeed / (succeed + failed) * 100)}% | {succeed} succeeded {failed} failed")
-            except ZeroDivisionError as err:
-                print(f"\n{WARNING}[*] Could not calculate success rate because no teams were found: {err}")
         except RuntimeError as err:
             print(f"{ERROR}[-] Skipping {class_name} due to failure with authentication (Maybe reget cookie). Error: {err}")
             failed += 1
+            
+    if FAIL_LOG:
+        log_path = os.path.join(SAVE_DIR, "REQUIRES_MANUAL_DOWNLOAD.txt")
+        with open(log_path, "w", encoding="utf-8") as file:
+            file.write(f"{len(FAIL_LOG)} files failed to download likely due to blocked permissions or rate limit. Manually download the files below in order to presereve them.\n")
+            file.write("#" * 67 + "\n\n")
+            for team, assignment, filename, url in FAIL_LOG:
+                file.write(f"Team:  {team}\nAssignment:  {assignment}\nFile:  {filename}\nLink:  {url or 'Not Found'}\n\n")
+
+            print(f"\n{WARNING}[!] Detected {len(FAIL_LOG)} files that require manual downloading. Check {log_path}")
+    try:
+        print(f"\n{INFO}[*] Success rate: {(succeed / (succeed + failed) * 100)}% | {succeed} succeeded {failed} failed")
+    except ZeroDivisionError as err:
+        print(f"\n{WARNING}[*] Could not calculate success rate because no teams were found: {err}")
 
 main()
